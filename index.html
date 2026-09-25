@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Date Night Question</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Nunito:wght@400;700;800&display=swap">
+<style>
+  :root {
+    --bg: #FFEEF2;
+    --bg-glow: #FFD6DF;
+    --card: #FFFFFF;
+    --ink: #4A1F2B;
+    --muted: #9C6C79;
+    --accent: #E5486A;
+    --accent-deep: #C42F51;
+    --gold: #F6B84B;
+    --shadow: 0 18px 50px rgba(196, 47, 81, 0.18);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    padding: 0 16px;
+    overflow: hidden;
+    color: var(--ink);
+    background: radial-gradient(circle at 20% 10%, var(--bg-glow), transparent 45%),
+                radial-gradient(circle at 85% 90%, var(--bg-glow), transparent 40%),
+                var(--bg);
+    font-family: Nunito, "Segoe UI", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+  .stage {
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding-block: 32px;
+  }
+  .card {
+    width: min(100%, 460px);
+    background: var(--card);
+    border-radius: 28px;
+    padding: 40px 28px 34px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .eyebrow {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    margin: 0;
+    font-family: Fraunces, Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(30px, 7vw, 40px);
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .sub { margin: 14px 0 0; color: var(--muted); }
+  .from { margin: 6px 0 0; font-style: italic; color: var(--muted); }
+
+  .heart {
+    width: 56px; height: 56px;
+    margin: 0 auto 24px;
+    position: relative;
+    background: var(--accent);
+    transform: rotate(-45deg);
+    animation: beat 1.3s ease-in-out infinite;
+  }
+  .heart::before, .heart::after {
+    content: "";
+    position: absolute;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .heart::before { top: -28px; left: 0; }
+  .heart::after  { top: 0; left: 28px; }
+  @keyframes beat {
+    0%, 100% { transform: rotate(-45deg) scale(1); }
+    30%      { transform: rotate(-45deg) scale(1.12); }
+  }
+
+  .choices {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    min-height: 60px;
+    margin-top: 30px;
+  }
+  .btn {
+    font: inherit;
+    font-weight: 800;
+    font-size: 18px;
+    padding: 14px 34px;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.25s ease, background 0.2s ease;
+  }
+  .btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+  .yes { background: var(--accent); color: #fff; box-shadow: 0 8px 20px rgba(229, 72, 106, 0.35); }
+  .yes:hover { background: var(--accent-deep); }
+  .no  { background: #F5E4E9; color: var(--ink); }
+  .no.fleeing { position: fixed; z-index: 10; margin: 0; }
+
+  #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .heart { animation: none; }
+    .btn { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="card" id="ask">
+    <div class="heart" aria-hidden="true"></div>
+    <p class="eyebrow">A very important question</p>
+    <h1 id="question">Will you go on a <em>date</em> with me?</h1>
+    <p class="sub">Take your time. There is no wrong answer. Mostly.</p>
+    <p class="from" id="from" hidden></p>
+    <div class="choices">
+      <button class="btn yes" id="yes" type="button">Yes</button>
+      <button class="btn no" id="no" type="button">No</button>
+    </div>
+  </section>
+
+  <section class="card" id="won" hidden>
+    <div class="heart" aria-hidden="true"></div>
+    <p class="eyebrow">Knew it</p>
+    <h1>Yay! <em>It's a date.</em></h1>
+    <p class="sub" id="wonText">I'll send you the details. This is going to be fun.</p>
+  </section>
+</main>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+  // ---- Personalise here -------------------------------------------------
+  const ASKEE = "";   // e.g. "Priya"    -> "Will you go on a date with me, Priya?"
+  const ASKER = "";   // e.g. "Himanshu" -> shows "from Himanshu" under the question
+  const YES_MESSAGE = "I'll send you the details. This is going to be fun.";
+  // -----------------------------------------------------------------------
+
+  const yes = document.getElementById("yes");
+  const no  = document.getElementById("no");
+  const ask = document.getElementById("ask");
+  const won = document.getElementById("won");
+
+  if (ASKEE) document.getElementById("question").innerHTML =
+    "Will you go on a <em>date</em> with me, " + ASKEE + "?";
+  if (ASKER) { const f = document.getElementById("from"); f.textContent = "from " + ASKER; f.hidden = false; }
+  document.getElementById("wonText").textContent = YES_MESSAGE;
+
+  const pleas = ["No", "Are you sure?", "Really sure?", "Think again!", "Last chance!",
+                 "Pretty please?", "Don't do this", "I'll cry", "Ok, just click Yes"];
+  let dodges = 0;
+
+  function overlaps(a, b) {
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  }
+
+  function dodge() {
+    const r = no.getBoundingClientRect();
+    const yesRect = yes.getBoundingClientRect();
+    const pad = 12;
+    const maxX = Math.max(pad, window.innerWidth  - r.width  - pad);
+    const maxY = Math.max(pad, window.innerHeight - r.height - pad);
+    let x, y, tries = 0;
+    do {
+      x = pad + Math.random() * (maxX - pad);
+      y = pad + Math.random() * (maxY - pad);
+      tries++;
+    } while (tries < 30 && (
+      Math.hypot(x - r.left, y - r.top) < 160 ||
+      overlaps({ left: x, top: y, right: x + r.width, bottom: y + r.height }, yesRect)
+    ));
+    no.classList.add("fleeing");
+    no.style.left = x + "px";
+    no.style.top  = y + "px";
+    dodges++;
+    no.textContent = pleas[Math.min(dodges, pleas.length - 1)];
+    yes.style.transform = "scale(" + (1 + Math.min(dodges, 7) * 0.1) + ")";
+  }
+
+  // Runs away when the cursor gets close, and if a tap or click ever lands anyway.
+  no.addEventListener("mouseenter", dodge);
+  no.addEventListener("pointerdown", function (e) { e.preventDefault(); dodge(); });
+  no.addEventListener("click", function (e) { e.preventDefault(); dodge(); });
+  document.addEventListener("mousemove", function (e) {
+    const r = no.getBoundingClientRect();
+    const cx = Math.max(r.left, Math.min(e.clientX, r.right));
+    const cy = Math.max(r.top,  Math.min(e.clientY, r.bottom));
+    if (Math.hypot(e.clientX - cx, e.clientY - cy) < 40) dodge();
+  });
+
+  yes.addEventListener("click", function () {
+    ask.hidden = true;
+    no.hidden = true;
+    won.hidden = false;
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) confetti();
+  });
+
+  function confetti() {
+    const c = document.getElementById("confetti");
+    const ctx = c.getContext("2d");
+    c.width = window.innerWidth; c.height = window.innerHeight; c.hidden = false;
+    const colors = ["#E5486A", "#F6B84B", "#FF8FA8", "#C42F51", "#FFFFFF"];
+    const ps = Array.from({ length: 160 }, function () {
+      return {
+        x: Math.random() * c.width, y: -20 - Math.random() * c.height,
+        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+        vy: 2 + Math.random() * 3, vx: -1 + Math.random() * 2,
+        rot: Math.random() * Math.PI, vr: -0.1 + Math.random() * 0.2,
+        col: colors[(Math.random() * colors.length) | 0]
+      };
+    });
+    let frames = 0;
+    (function tick() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (const p of ps) {
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.col; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+        if (p.y > c.height + 20) { p.y = -20; p.x = Math.random() * c.width; }
+      }
+      if (++frames < 540) requestAnimationFrame(tick);
+      else { ctx.clearRect(0, 0, c.width, c.height); c.hidden = true; }
+    })();
+  }
+</script>
+</body>
+</html>
